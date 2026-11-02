@@ -85,6 +85,14 @@ Two separate repos, created by the user on GitHub; code is pushed only after the
 - **Frontend repo**: Vite + React 19 + TypeScript + TanStack Router (file-based) + TanStack Query + shadcn/ui + Tailwind 4 + Recharts, laid out exactly like the reference (`routes/`, `components/<domain>`, `hooks/`, `https/services/`, `lib/`). Because that layout is a single-page app, **TanStack Start (SSR) is replaced by the Vite SPA** for this internal login-only dashboard; the API contract is mirrored in `lib/interfaces/`.
 - Conventions: see `docs/CONVENTIONS.md` (saved from the team guide).
 
+## Decisions: company, login, roles (confirmed by user)
+- **Single company for first launch** (domain `orotron.com`, supplied via `ALLOWED_EMAIL_DOMAIN`, never hardcoded). GitHub side stays multi-installation (several GitHub orgs/accounts can be connected).
+- **Login:** company Zoho accounts via OAuth2/OpenID Connect (Zoho Accounts / Zoho Directory SSO if the company has it; otherwise another company IdP). Needs: Zoho API Console client id/secret, redirect URI, and the Zoho data-center domain (`accounts.zoho.com|.in|.eu`…). Provider is behind an interface so it can be swapped.
+- **Access control:** a company email is NOT enough. Only employees invited/approved by an Admin can sign in. No public sign-up. First Super Admin is seeded from `SUPER_ADMIN_EMAIL`.
+- **Roles:** `DEVELOPER` (own activity + team analytics), `ADMIN` (employees, GitHub connections, repositories, reports), `SUPER_ADMIN` (everything incl. settings and role management). Replaces the earlier ADMIN/MANAGER/DEVELOPER enum; migrate `role_name` when the auth milestone starts.
+- GitHub accounts are linked to employees separately (admin-managed); commits are always attributed by GitHub identity.
+- Open item: confirm whether the company has Zoho Directory/Zoho One (affects how login is configured).
+
 ## Status
 - **Milestone 1: done** (23 tests passing): schema/migrations, GitHub App auth, multi-installation discovery, resumable branch-aware import, signed webhooks + async processing.
 - **In progress:** strict-TS hardening, API-call efficiency pass, analytics API, dashboard (pulled forward from Milestone 3, with minimal auth guard).
