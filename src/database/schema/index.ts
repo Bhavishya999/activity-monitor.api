@@ -15,7 +15,7 @@ export const syncKind = pgEnum("sync_kind", ["discovery", "import", "reconcile"]
 export const syncStatus = pgEnum("sync_status", ["pending", "running", "succeeded", "failed", "partial", "cancelled"]);
 export const webhookStatus = pgEnum("webhook_status", ["received", "processing", "processed", "failed", "ignored"]);
 export const commitSource = pgEnum("commit_source", ["import", "webhook", "reconcile"]);
-export const roleName = pgEnum("role_name", ["ADMIN", "MANAGER", "DEVELOPER"]);
+export const roleName = pgEnum("role_name", ["DEVELOPER", "ADMIN", "SUPER_ADMIN"]);
 export const reportKind = pgEnum("report_kind", ["EVENING", "MORNING"]);
 export const deliveryStatus = pgEnum("delivery_status", ["pending", "sent", "failed", "skipped"]);
 

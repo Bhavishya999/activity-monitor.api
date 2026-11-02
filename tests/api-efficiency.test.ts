@@ -7,7 +7,7 @@ import { createApp } from "../src/app.js";
 import { discoverRepositories } from "../src/worker/services/discovery.js";
 import { importRepository, startSyncRun, RATE_LIMIT_FLOOR } from "../src/worker/services/importer.js";
 import { processWebhookDelivery } from "../src/worker/services/webhooks.js";
-import { acct, commitOf, FakeGitHub, installation, repo, reset, testDb } from "./helpers.js";
+import { acct, commitOf, FakeGitHub, installation, repo, reset, testAuth, testDb } from "./helpers.js";
 
 const { db } = testDb();
 let gh: FakeGitHub;
@@ -95,7 +95,7 @@ describe("ETag conditional requests", () => {
 
 describe("webhook push avoids redundant API calls", () => {
   const secret = "webhook-secret-1234567890";
-  const app = createApp({ db, webhookSecret: secret, queue: { send: async () => "id" } });
+  const app = createApp({ db, webhookSecret: secret, auth: testAuth, queue: { send: async () => "id" } });
   const body = { ref: "refs/heads/main", after: "c1", installation: { id: 1 }, repository: { id: 11 }, sender: { id: 7, login: "p", type: "User" }, commits: [{ id: "c1", timestamp: "2026-10-05T10:00:00Z" }] };
   async function deliver(id: string) {
     const raw = JSON.stringify(body);

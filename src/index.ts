@@ -4,6 +4,7 @@ import { createDb } from "./database/client.js";
 import { JOBS } from "./constants/jobs.js";
 import { createApp } from "./app.js";
 import { appConfig } from "./config/app-config.js";
+import { authConfig } from "./config/auth-config.js";
 import { dbConfig } from "./config/db-config.js";
 import { githubConfig } from "./config/github-config.js";
 import { logger } from "./utils/pino-logger.js";
@@ -18,6 +19,7 @@ const app = createApp({
   db,
   queue: { send: (name, data, options) => boss.send(name, data, options) },
   webhookSecret: githubConfig.webhookSecret,
+  auth: authConfig,
   maxWebhookBodyBytes: githubConfig.maxWebhookBodyBytes,
 });
 serve({ fetch: app.fetch, port: appConfig.port });

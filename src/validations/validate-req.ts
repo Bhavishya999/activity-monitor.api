@@ -1,18 +1,16 @@
-import type { MiddlewareHandler } from "hono";
-import { createMiddleware } from "hono/factory";
+import { zValidator } from "@hono/zod-validator";
 import type { z } from "zod";
 import { BadRequestException } from "../exceptions/bad-request-exception.js";
-import type { AppBindings } from "../types/app.types.js";
 
-type Source = "query" | "json";
+type Target = "query" | "json" | "param";
 
-/** Validates query or JSON body against a schema; handlers read the result with getValidated(). */
-export function validateReq<S extends z.ZodType>(source: Source, schema: S): MiddlewareHandler<AppBindings & { Variables: { validated: z.infer<S> } }> {
-  return createMiddleware<AppBindings & { Variables: { validated: z.infer<S> } }>(async (c, next) => {
-    const input: unknown = source === "query" ? c.req.query() : await c.req.json().catch(() => undefined);
-    const parsed = schema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
-    c.set("validated", parsed.data);
-    await next();
+/** Validates a request part; failures become a 400 through the global error handler. */
+// Return type is intentionally inferred: it carries the schema type through to c.req.valid() in each handler.
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function validateReq<S extends z.ZodType, T extends Target>(target: T, schema: S) {
+  return zValidator(target, schema, (result) => {
+    if (!result.success) {
+      throw new BadRequestException(result.error.issues.map((i) => `${i.path.join(".") || target}: ${i.message}`).join("; "));
+    }
   });
 }

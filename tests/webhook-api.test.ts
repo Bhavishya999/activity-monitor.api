@@ -6,12 +6,12 @@ import type { SendOptions } from "../src/types/app.types.js";
 import { createApp } from "../src/app.js";
 import { discoverRepositories } from "../src/worker/services/discovery.js";
 import { processWebhookDelivery } from "../src/worker/services/webhooks.js";
-import { acct, commitOf, FakeGitHub, installation, repo, reset, testDb } from "./helpers.js";
+import { acct, commitOf, FakeGitHub, installation, repo, reset, testAuth, testDb } from "./helpers.js";
 
 const secret = "webhook-secret-1234567890";
 const { db } = testDb();
 const sent: { name: string; data: object; options?: SendOptions | undefined }[] = [];
-const app = createApp({ db, webhookSecret: secret, queue: { send: async (name, data, options) => { sent.push({ name, data, options }); return "id"; } } });
+const app = createApp({ db, webhookSecret: secret, auth: testAuth, queue: { send: async (name, data, options) => { sent.push({ name, data, options }); return "id"; } } });
 
 const sign = (b: string) => "sha256=" + createHmac("sha256", secret).update(b).digest("hex");
 function post(body: object | string, headers: Record<string, string> = {}, sig?: string) {

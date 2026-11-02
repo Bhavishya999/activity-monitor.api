@@ -55,3 +55,6 @@ export function repo(id: number, full: string, owner: GhAccount): GhRepo {
   const [, name] = full.split("/");
   return { id, name: name!, fullName: full, private: false, archived: false, defaultBranch: "main", htmlUrl: `https://github.com/${full}`, pushedAt: null, owner };
 }
+
+import type { AuthOptions } from "../src/types/app.types.js";
+export const testAuth: AuthOptions = { devAuthEnabled: true, secureCookies: false, sessionTtlMs: 3_600_000, defaultTimezone: "Asia/Kolkata" };

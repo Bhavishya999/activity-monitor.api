@@ -10,4 +10,7 @@ export const env = {
   NODE_ENV: process.env["NODE_ENV"] ?? "development",
   PORT: Number(process.env["PORT"] ?? 3000),
   LOG_LEVEL: process.env["LOG_LEVEL"] ?? "info",
+  DEV_AUTH_ENABLED: process.env["DEV_AUTH_ENABLED"] === "true",
+  SESSION_TTL_HOURS: Number(process.env["SESSION_TTL_HOURS"] ?? 12),
+  REPORT_TIMEZONE: process.env["REPORT_TIMEZONE"] ?? "Asia/Kolkata",
 } as const;
