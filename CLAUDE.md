@@ -9,6 +9,14 @@ Read this first. Frontend repo: `activity-monitor.app` (has its own CLAUDE.md). 
 - Real GitHub data only. Never fabricate commits or stats. Sample data is allowed only in a separate dev database, clearly labelled, never in production.
 - Commit counts are **not** a productivity measure; the UI says so.
 
+## Decisions: company, login, roles (confirmed by user)
+- **Single company for first launch** (domain `orotron.com`, supplied via `ALLOWED_EMAIL_DOMAIN`, never hardcoded). GitHub side stays multi-installation (several GitHub orgs/accounts can be connected).
+- **Login:** company Zoho accounts via OAuth2/OpenID Connect (Zoho Accounts / Zoho Directory SSO if the company has it; otherwise another company IdP). Needs: Zoho API Console client id/secret, redirect URI, and the Zoho data-center domain (`accounts.zoho.com|.in|.eu`…). Provider is behind an interface so it can be swapped.
+- **Access control:** a company email is NOT enough. Only employees invited/approved by an Admin can sign in. No public sign-up. First Super Admin is seeded from `SUPER_ADMIN_EMAIL`.
+- **Roles:** `DEVELOPER` (own activity + team analytics), `ADMIN` (employees, GitHub connections, repositories, reports), `SUPER_ADMIN` (everything incl. settings and role management). Replaces the earlier ADMIN/MANAGER/DEVELOPER enum; migrate `role_name` when the auth milestone starts.
+- GitHub accounts are linked to employees separately (admin-managed); commits are always attributed by GitHub identity.
+- Open item: confirm whether the company has Zoho Directory/Zoho One (affects how login is configured).
+
 ## Stack (pinned stable versions only; no alpha/beta/rc)
 Node 22 locally / 24 LTS on Railway · TypeScript 5.9 strict · Hono 4 + @hono/node-server · Drizzle ORM + drizzle-kit (SQL migrations) · PostgreSQL · pg-boss (queue on Postgres, no Redis) · Zod · Pino · Octokit (GitHub App auth) · Vitest. Deploy: Railway (api, worker, Postgres). Frontend: Vite + React + TanStack Router/Query + shadcn/Tailwind + Recharts (separate repo).
 
@@ -24,7 +32,7 @@ Node 22 locally / 24 LTS on Railway · TypeScript 5.9 strict · Hono 4 + @hono/n
 - Webhooks: verify HMAC-SHA256 on the **exact raw body**, persist `webhook_delivery`, return 202, process asynchronously.
 - Never import large histories inside HTTP requests; use queued jobs with checkpoints; respect rate limits; do not re-fetch what is already stored (skip unchanged branches, incremental `since`, ETags, stop at shared history).
 - Dates: store UTC; bucket in SQL with `AT TIME ZONE` (default Asia/Kolkata, admin-configurable).
-- RBAC enforced on the server for every route (ADMIN / MANAGER / DEVELOPER). Never trust frontend guards.
+- RBAC enforced on the server for every route (DEVELOPER / ADMIN / SUPER_ADMIN). Never trust frontend guards.
 - Secrets only in env/Railway; never in code, logs, chat or the frontend. Never ask the user to paste keys/tokens.
 
 ## TypeScript & code rules (enforced by `npm run lint` + tsc)
