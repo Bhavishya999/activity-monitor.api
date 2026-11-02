@@ -56,6 +56,6 @@ Local DB: Postgres on :5432 with `gam_dev` and `gam_test` (user/pass `gam`/`gam`
 - Milestones: 1 ingestion ✅ · 2 auth/RBAC/employees · 3 analytics API + dashboard · 4 sync UI/reconciliation · 5 Slack/Sheets/reports · 6 hardening/deploy/docs. Update `docs/PLAN.md` when decisions change.
 
 ## Status (update as you go)
-Done: schema+migrations, GitHub App client, multi-installation discovery, resumable branch-aware import, signed webhooks + async processing, strict-TS/lint, API layering, 43 tests.
-Next: worker/schema cleanup to the layering rules → analytics API (+ dev-only login guarded off in production) → reports/Slack/Sheets → auth (Google/Entra).
-Waiting on user: create private GitHub repos `activity-monitor.api` and `activity-monitor.app`, then connect them (this sandbox cannot create repos); GitHub App credentials; OAuth client + company domain; Slack webhook; Google service account.
+Done: schema+migrations, GitHub App client, multi-installation discovery, resumable branch-aware import, signed webhooks + async processing, strict-TS/lint, API layering, sessions + CSRF + role gate (dev-only login), analytics API (overview, developers, repositories, commits) with timezone-correct bucketing, 92 tests.
+Next: frontend scaffold + Overview dashboard → worker/schema cleanup to the layering rules → Zoho OIDC login + invites + admin routes → reports/Slack/Sheets.
+Waiting on user: GitHub App credentials; Zoho API Console client + data center; Slack webhook; Google service account.

@@ -15,8 +15,9 @@ Frontend: [`activity-monitor.app`](https://github.com/Bhavishya999/activity-moni
 | Repository discovery | Done |
 | Resumable commit import (all branches, incremental, deduplicated) | Done |
 | Signed webhook receiver + async processing | Done |
-| Analytics API | Next |
-| Zoho login, invites and roles (Developer / Admin / Super Admin) | Planned |
+| Analytics API (overview, developers, repositories, commit search; time-zone aware) | Done |
+| Sessions, CSRF, role gate (dev-only login until Zoho) | Done |
+| Zoho login, invites and admin user management | Next |
 | Scheduled reports, Slack, Google Sheets | Planned |
 
 ## How it works
@@ -59,6 +60,8 @@ npm run dev:worker              # background worker (second terminal)
 | `GITHUB_APP_ID` | worker | GitHub App id |
 | `GITHUB_APP_PRIVATE_KEY` | worker | GitHub App private key (PEM, `\n`-escaped). Store as a secret |
 | `REPORT_TIMEZONE` | api, worker | Reporting time zone, default `Asia/Kolkata` |
+| `DEV_AUTH_ENABLED` | api | `true` only on a developer machine; the API refuses to start with it in production |
+| `SESSION_TTL_HOURS` | api | Session lifetime, default 12 |
 | `PORT`, `LOG_LEVEL`, `NODE_ENV` | api | Server port, log level, environment |
 | `TEST_DATABASE_URL` | tests | Must contain `test` in its name |
 

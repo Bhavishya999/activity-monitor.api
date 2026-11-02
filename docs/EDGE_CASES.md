@@ -13,15 +13,15 @@ Status: ✅ handled + tested · 🛠 planned (milestone) · ⚠ limitation to do
 | 5xx / network errors | Transient: pg-boss retries with exponential backoff, resumes from checkpoint | ✅ |
 | Unresolved author (no GitHub user for the email) | `author_account_id` NULL → shown as **Unassigned**; never guessed from name/email | ✅ |
 | Author ≠ committer ≠ pusher | Three separate columns; filter chooses which one counts | ✅ |
-| Bot accounts (dependabot, renovate, github-actions) | Stored with type `Bot`; 🛠 excluded from "active developers" and leaderboards by default, toggle in filters |
+| Bot accounts (dependabot, renovate, github-actions) | Stored with type `Bot`; excluded by default, `includeBots=true` toggle | ✅ |
 | Force-push / rebase rewrites history | Old SHAs stay (we never delete commits); counted once; ⚠ documented. 🛠 reconcile marks commits no longer reachable from any branch head as `orphaned` | 🛠 ⚠ |
 | Deleted branch | Marked `deleted`, commits kept; ⚠ coverage banner: "history reachable only from deleted branches may be incomplete" | ✅ ⚠ |
 | Forks (same commits in a fork and its upstream) | 🛠 `repository.is_fork`; analytics option "exclude forks" (default on) to avoid double counting | 🛠 |
 | Repo renamed / transferred between orgs | Repo id is stable; `repository` event + discovery refresh `full_name` / `installation_id`; history preserved | ✅ |
 | Installation suspended / uninstalled / repo removed from installation | Status flag + `accessible=false`; history kept, no new imports | ✅ |
 | Huge repos (100k+ commits) | Page checkpoints, one repo per job, `since` window, no inline imports, singleton keys | ✅ |
-| Commits with future or 1970 timestamps (bad clocks) | 🛠 clamp analytics to `committed_at <= now()`; flag outliers in an admin "data quality" list | 🛠 |
-| Merge commits inflate counts | `is_merge` stored; 🛠 "exclude merges" filter, default on for leaderboards | 🛠 |
+| Commits with future timestamps (bad clocks) | Analytics ignore `committed_at > now()`; 🛠 admin "data quality" list | ✅ 🛠 |
+| Merge commits inflate counts | `is_merge` stored; `includeMerges=false` filter | ✅ |
 | Additions/deletions missing | Nullable until enriched; UI shows `--`, never 0 | ✅ ⚠ |
 
 ## 2. Webhooks
@@ -39,11 +39,11 @@ Status: ✅ handled + tested · 🛠 planned (milestone) · ⚠ limitation to do
 ## 3. Time & numbers
 | Case | Handling | Status |
 |---|---|---|
-| Day boundaries | All day/hour bucketing done in SQL with `AT TIME ZONE <report tz>` (default Asia/Kolkata); stored UTC | 🛠 (tests with 23:59/00:00 IST boundaries) |
+| Day boundaries | All day/hour bucketing done in SQL with `AT TIME ZONE <report tz>` (default Asia/Kolkata); stored UTC; tested at 23:59:59 vs 00:00:00 IST and against UTC | ✅ |
 | 4:30 PM report is partial-day, 7:00 AM report is previous full day | Report range computed from tz, stored on `daily_report` | 🛠 |
 | Retries creating duplicate reports | Unique `(kind, report_date)` | ✅ schema |
 | Commit authored vs committed time | Charts use `committed_at` by default; filter switch to `authored_at` | 🛠 |
-| Zero-activity days | Series is zero-filled with `generate_series` so charts have no gaps | 🛠 |
+| Zero-activity days | Series is zero-filled with `generate_series`; hourly always 24 buckets | ✅ |
 | Counts are not productivity | Permanent disclaimer on leaderboards and developer pages | 🛠 |
 
 ## 4. Identity & access
@@ -51,9 +51,9 @@ Status: ✅ handled + tested · 🛠 planned (milestone) · ⚠ limitation to do
 |---|---|---|
 | One person, several GitHub accounts | Admin-managed `employee_developer_account`; originals untouched | ✅ schema |
 | Account linked to two employees | Unique index on `developer_account_id` | ✅ |
-| Developer role sees only own data | Scope resolved server-side from linked accounts; frontend guards are cosmetic | 🛠 |
-| Session theft / CSRF | HttpOnly Secure SameSite cookie, CSRF token on mutations, server-side session revocation | 🛠 |
-| Dev login in production | Hard-disabled when `NODE_ENV=production`; process refuses to boot if the flag is set | 🛠 |
+| Role checks | Server-side `requireRole` gate on every route; Developers read team analytics per product decision; admin routes get their own gate | ✅ (gate) 🛠 (admin routes) |
+| Session theft / CSRF | HttpOnly SameSite=Lax cookie (Secure in production), hashed session ids, CSRF token on mutations, server-side logout, deactivated users rejected | ✅ |
+| Dev login in production | Route 404s unless enabled; process refuses to boot if the flag is set in production | ✅ |
 | Employee leaves / privacy removal | Anonymise personal fields, keep aggregate counts | 🛠 |
 | Secrets in logs | Pino redaction for tokens / cookies / keys; keys never reach the frontend | ✅ |
 
