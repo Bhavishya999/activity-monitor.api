@@ -50,6 +50,7 @@ npm run dev | npm run dev:worker
 Local DB: Postgres on :5432 with `gam_dev` and `gam_test` (user/pass `gam`/`gam`, dev only). In the cloud sandbox Postgres can stop; restart with `pg_ctlcluster 16 main start`. Tests refuse to run against a non-"test" database.
 
 ## Workflow
+- **Commit identity:** commits are authored only by the user (Bhavishya999). Never add `Co-Authored-By` lines, Claude/session links, or "Generated with" footers to commit messages, PR descriptions or files. Keep messages short and descriptive.
 - One deployable change per commit, no "WIP". Commit/push only when the user asks. Don't create PRs unless asked. Don't commit `dist/` (Railway builds).
 - Before coding a feature: check `docs/EDGE_CASES.md`; add tests for each edge case you handle and tick it off there.
 - Milestones: 1 ingestion ✅ · 2 auth/RBAC/employees · 3 analytics API + dashboard · 4 sync UI/reconciliation · 5 Slack/Sheets/reports · 6 hardening/deploy/docs. Update `docs/PLAN.md` when decisions change.
