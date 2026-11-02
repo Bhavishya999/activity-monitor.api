@@ -68,3 +68,40 @@ export async function getLeaderboard(db: Db, f: CommitFilters, limit: number): P
     order by commits desc, d.login nulls last limit ${limit}`);
   return res.rows;
 }
+
+export type BreakdownDimension = "organization" | "repository" | "developer" | "team";
+export type BreakdownRow = { id: number | null; label: string | null; commits: number; developers: number; repositories: number; latest_commit: string | null };
+
+type Dimension = { joins: ReturnType<typeof sql>; key: ReturnType<typeof sql>; label: ReturnType<typeof sql> };
+
+/** Every grouping the UI can pivot on; adding a dimension is one entry here. */
+function dimensionFor(by: BreakdownDimension, f: CommitFilters): Dimension {
+  switch (by) {
+    case "organization":
+      return {
+        joins: sql`join github_installation gi on gi.id = r.installation_id join github_account ga on ga.id = gi.account_id`,
+        key: sql`ga.id`, label: sql`ga.login`,
+      };
+    case "repository": return { joins: sql``, key: sql`r.id`, label: sql`r.full_name` };
+    case "developer": return { joins: sql``, key: sql`d.id`, label: sql`d.login` };
+    case "team":
+      return {
+        joins: sql`join team_member tm on tm.developer_account_id = ${whoColumn(f)} join team t on t.id = tm.team_id`,
+        key: sql`t.id`, label: sql`t.name`,
+      };
+  }
+}
+
+/** Generic "group commits by X" used for org / team / repo / person pivots. A developer in two teams counts in both. */
+export async function getBreakdown(db: Db, f: CommitFilters, by: BreakdownDimension, limit: number): Promise<BreakdownRow[]> {
+  const dim = dimensionFor(by, f);
+  const res = await db.execute<BreakdownRow>(sql`
+    select ${dim.key} as id, ${dim.label} as label, count(*)::int as commits,
+           count(distinct ${whoColumn(f)})::int as developers, count(distinct c.repository_id)::int as repositories,
+           ${isoUtc(sql`max(c.committed_at)`)} as latest_commit
+    ${commitFrom(f)} ${dim.joins}
+    where ${commitWhere(f)}
+    group by ${dim.key}, ${dim.label}
+    order by commits desc, label nulls last limit ${limit}`);
+  return res.rows;
+}

@@ -16,6 +16,7 @@ Frontend: [`activity-monitor.app`](https://github.com/Bhavishya999/activity-moni
 | Resumable commit import (all branches, incremental, deduplicated) | Done |
 | Signed webhook receiver + async processing | Done |
 | Analytics API (overview, developers, repositories, commit search; time-zone aware) | Done |
+| Teams (admin-defined groups) and a generic group-by breakdown | Done |
 | Sessions, CSRF, role gate (dev-only login until Zoho) | Done |
 | Zoho login, invites and admin user management | Next |
 | Scheduled reports, Slack, Google Sheets | Planned |
@@ -70,6 +71,23 @@ Secrets belong in environment variables or your host's secret store only.
 ### GitHub App
 
 Create a GitHub App with **Metadata: read** and **Contents: read**, subscribe to **Push**, **Repository**, **Installation** and **Installation repositories** events, set the webhook URL to `https://<api-host>/api/v1/webhooks/github`, then install it on each organization or account you want monitored. Details: [docs/milestone-1.md](docs/milestone-1.md).
+
+## API overview (`/api/v1`)
+
+All routes except health and webhooks need a session. Reads are open to every signed-in role; changes are admin-only and need the `x-csrf-token` header.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /analytics/overview` | Totals, daily trend, hourly activity, repository share, leaderboard, recent commits |
+| `GET /analytics/breakdown?by=organization\|repository\|developer\|team` | Group the same activity by any dimension |
+| `GET /developers`, `GET /developers/:id` | Developer list and profile (trend, repo breakdown, linked GitHub accounts) |
+| `GET /repositories`, `GET /repositories/:id` | Repository list and detail (branches, contributors) |
+| `GET /commits` | Commit search with pagination |
+| `GET/POST/PATCH/DELETE /teams`, `PUT /teams/:id/members` | Teams: read for all, manage for Admin and Super Admin (audited) |
+| `POST /auth/dev-login`, `GET /auth/me`, `POST /auth/logout` | Sessions (dev login only when `DEV_AUTH_ENABLED=true`) |
+| `POST /webhooks/github` | GitHub webhook receiver |
+
+Shared filter parameters: `range` (`today`, `yesterday`, `last7`, `last30`, `last90`, `custom` with `from`/`to`), `timezone`, `installationId`, `repositoryId`, `developerId`, `teamId`, `branch`, `attribution` (`author`/`committer`), `includeBots`, `includeMerges`. Nothing is tied to one organization: any GitHub installation or team structure works, and everything is calculated from stored commits on each request.
 
 ## Scripts
 

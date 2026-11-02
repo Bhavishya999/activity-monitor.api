@@ -27,6 +27,9 @@ export function commitWhere(f: CommitFilters): SQL {
   if (f.installationId !== null) conds.push(sql`r.installation_id = ${f.installationId}`);
   if (f.repositoryId !== null) conds.push(sql`r.id = ${f.repositoryId}`);
   if (f.developerId !== null) conds.push(sql`${who} = ${f.developerId}`);
+  if (f.teamId !== null) {
+    conds.push(sql`exists (select 1 from team_member tm where tm.team_id = ${f.teamId} and tm.developer_account_id = ${who})`);
+  }
   if (f.branch !== null) {
     conds.push(sql`exists (select 1 from commit_branch cb join branch b on b.id = cb.branch_id where cb.commit_id = c.id and b.name = ${f.branch})`);
   }

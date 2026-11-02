@@ -1,5 +1,5 @@
 import {
-  getDailyTrend, getHourlyActivity, getInventory, getLeaderboard, getRepositoryDistribution, getTotals,
+  getBreakdown, getDailyTrend, getHourlyActivity, getInventory, getLeaderboard, getRepositoryDistribution, getTotals, type BreakdownDimension,
 } from "../services/database/analytics-db-service.js";
 import { listCommitRows } from "../services/database/commit-db-service.js";
 import type { CommitFilters } from "../types/analytics.types.js";
@@ -49,5 +49,18 @@ export async function getOverview(deps: AppDeps, query: FilterQuery): Promise<un
       commits: l.commits, repositories: l.repositories,
     })),
     recentCommits: recent.map(toCommitDto),
+  };
+}
+
+export async function getBreakdownReport(deps: AppDeps, query: FilterQuery & { by: BreakdownDimension; limit: number }): Promise<unknown> {
+  const f = buildFilters(deps, query);
+  const rows = await getBreakdown(deps.db, f, query.by, query.limit);
+  return {
+    range: rangeMeta(f),
+    by: query.by,
+    groups: rows.map((r) => ({
+      id: r.id, label: r.label, // null id/label = unassigned commits
+      commits: r.commits, developers: r.developers, repositories: r.repositories, latestCommitAt: r.latest_commit,
+    })),
   };
 }

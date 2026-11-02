@@ -8,6 +8,7 @@ export type CommitFilters = {
   installationId: number | null;
   repositoryId: number | null;
   developerId: number | null;
+  teamId: number | null;
   branch: string | null;
   attribution: Attribution;
   includeBots: boolean;

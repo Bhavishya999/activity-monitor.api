@@ -103,6 +103,22 @@ export const employeeDeveloperAccount = pgTable("employee_developer_account", {
   uniqueIndex("eda_account_uq").on(t.developerAccountId), // an account maps to at most one employee
 ]);
 
+// ---------- teams (admin-defined groupings of developers) ----------
+export const team = pgTable("team", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  color: text("color"),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+}, (t) => [uniqueIndex("team_slug_uq").on(t.slug)]);
+
+export const teamMember = pgTable("team_member", {
+  teamId: bigint("team_id", { mode: "number" }).notNull().references(() => team.id, { onDelete: "cascade" }),
+  developerAccountId: bigint("developer_account_id", { mode: "number" }).notNull().references(() => developerAccount.id, { onDelete: "cascade" }),
+  createdAt: createdAt(),
+}, (t) => [primaryKey({ columns: [t.teamId, t.developerAccountId] }), index("team_member_account_idx").on(t.developerAccountId)]);
+
 // ---------- commits ----------
 export const commit = pgTable("commit", {
   id: bigserial("id", { mode: "number" }).primaryKey(),

@@ -6,6 +6,7 @@ import { analyticsRouter } from "./routes/analytics-router.js";
 import { commitRouter } from "./routes/commit-router.js";
 import { developerRouter } from "./routes/developer-router.js";
 import { repositoryRouter } from "./routes/repository-router.js";
+import { teamRouter } from "./routes/team-router.js";
 import { authRouter } from "./routes/auth-router.js";
 import { healthRouter } from "./routes/health-router.js";
 import { webhookRouter } from "./routes/webhook-router.js";
@@ -38,6 +39,7 @@ export function createApp(deps: AppDeps): Hono<AppBindings> {
   app.route("/api/v1/developers", developerRouter);
   app.route("/api/v1/repositories", repositoryRouter);
   app.route("/api/v1/commits", commitRouter);
+  app.route("/api/v1/teams", teamRouter);
 
   app.onError((err, c) => {
     const requestId = c.get("requestId");

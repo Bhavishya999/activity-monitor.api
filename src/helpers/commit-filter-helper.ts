@@ -12,6 +12,7 @@ export function buildFilters(deps: AppDeps, query: FilterQuery, search: string |
     installationId: query.installationId ?? null,
     repositoryId: query.repositoryId ?? null,
     developerId: query.developerId ?? null,
+    teamId: query.teamId ?? null,
     branch: query.branch ?? null,
     attribution: query.attribution,
     includeBots: query.includeBots,

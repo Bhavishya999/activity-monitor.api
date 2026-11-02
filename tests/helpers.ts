@@ -9,7 +9,7 @@ export function testDb() {
   return createDb(url, 4);
 }
 export async function reset(db: Db) {
-  await db.execute(sql`truncate github_account, developer_account, employee, app_user, webhook_delivery, daily_report, audit_log, setting restart identity cascade`);
+  await db.execute(sql`truncate github_account, developer_account, employee, team, app_user, webhook_delivery, daily_report, audit_log, setting restart identity cascade`);
 }
 
 export const acct = (id: number, login = `user${id}`, type: GhAccount["type"] = "User"): GhAccount =>

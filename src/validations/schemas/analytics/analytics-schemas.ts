@@ -13,6 +13,7 @@ export const vFilterQuerySchema = z.object({
   installationId: vId.optional(),
   repositoryId: vId.optional(),
   developerId: vId.optional(),
+  teamId: vId.optional(),
   branch: z.string().min(1).max(255).optional(),
   attribution: z.enum(ATTRIBUTIONS).default("author"),
   includeBots: vFlag("false"),
@@ -26,6 +27,11 @@ const vPaging = {
 };
 
 export const vOverviewQuerySchema = vFilterQuerySchema;
+export const BREAKDOWN_DIMENSIONS = ["organization", "repository", "developer", "team"] as const;
+export const vBreakdownQuerySchema = vFilterQuerySchema.extend({
+  by: z.enum(BREAKDOWN_DIMENSIONS),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
 export const vDeveloperListQuerySchema = vFilterQuerySchema.extend({ ...vPaging, sort: z.enum(["commits", "latest", "name"]).default("commits") });
 export const vRepositoryListQuerySchema = vFilterQuerySchema.extend({ ...vPaging, sort: z.enum(["commits", "latest", "name"]).default("commits") });
 export const vCommitListQuerySchema = vFilterQuerySchema.extend(vPaging);

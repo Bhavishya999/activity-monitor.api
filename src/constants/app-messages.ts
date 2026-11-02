@@ -16,6 +16,9 @@ export const APP_MESSAGES = {
   INVALID_TIMEZONE: "Unknown time zone",
   DEVELOPER_NOT_FOUND: "Developer not found",
   REPOSITORY_NOT_FOUND: "Repository not found",
+  TEAM_NOT_FOUND: "Team not found",
+  TEAM_EXISTS: "A team with this name already exists",
+  UNKNOWN_DEVELOPER_ACCOUNTS: "Some developer accounts do not exist",
 } as const;
 
 export const RATE_LIMITS = { WEBHOOK_PER_MINUTE: 600, API_PER_MINUTE: 300 } as const;
