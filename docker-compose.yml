@@ -1,0 +1,7 @@
+services:
+  db:
+    image: postgres:18
+    environment: { POSTGRES_USER: gam, POSTGRES_PASSWORD: gam, POSTGRES_DB: gam_dev }
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql]
+volumes: { pgdata: {} }
