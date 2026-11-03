@@ -57,4 +57,4 @@ export function repo(id: number, full: string, owner: GhAccount): GhRepo {
 }
 
 import type { AuthOptions } from "../src/types/app.types.js";
-export const testAuth: AuthOptions = { devAuthEnabled: true, secureCookies: false, sessionTtlMs: 3_600_000, defaultTimezone: "Asia/Kolkata" };
+export const testAuth: AuthOptions = { devAuthEnabled: true, secureCookies: false, sessionTtlMs: 3_600_000, defaultTimezone: "Asia/Kolkata", corsOrigins: [] };

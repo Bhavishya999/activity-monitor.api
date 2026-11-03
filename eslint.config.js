@@ -15,6 +15,6 @@ export default tseslint.config(
     },
   },
   // Config boundary files and standalone entry points may read process.env.
-  { files: ["**/env.ts", "tests/**", "**/*.config.ts", "src/database/run-migrations.ts", "src/worker/main.ts", "vitest.config.ts", "eslint.config.js"], rules: { "no-restricted-properties": "off" } },
+  { files: ["**/env.ts", "tests/**", "**/*.config.ts", "src/database/run-migrations.ts", "src/worker/main.ts", "src/seeders/seed-sample.ts", "vitest.config.ts", "eslint.config.js"], rules: { "no-restricted-properties": "off" } },
   { files: ["tests/**"], rules: { "@typescript-eslint/no-non-null-assertion": "off", "@typescript-eslint/explicit-module-boundary-types": "off" } },
 );

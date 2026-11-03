@@ -12,6 +12,7 @@ export type AuthOptions = {
   secureCookies: boolean;
   sessionTtlMs: number;
   defaultTimezone: string;
+  corsOrigins: readonly string[]; // exact origins allowed to call the API with credentials; empty = same-origin only
 };
 
 export type AppDeps = { db: Db; queue: Queue; webhookSecret: string; auth: AuthOptions; maxWebhookBodyBytes?: number };

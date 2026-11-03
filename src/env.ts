@@ -12,5 +12,6 @@ export const env = {
   LOG_LEVEL: process.env["LOG_LEVEL"] ?? "info",
   DEV_AUTH_ENABLED: process.env["DEV_AUTH_ENABLED"] === "true",
   SESSION_TTL_HOURS: Number(process.env["SESSION_TTL_HOURS"] ?? 12),
+  CORS_ORIGINS: process.env["CORS_ORIGINS"] ?? "",
   REPORT_TIMEZONE: process.env["REPORT_TIMEZONE"] ?? "Asia/Kolkata",
 } as const;

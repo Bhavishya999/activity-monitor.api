@@ -11,4 +11,5 @@ export const authConfig: AuthOptions = {
   secureCookies: isProduction,
   sessionTtlMs: env.SESSION_TTL_HOURS * 3_600_000,
   defaultTimezone: env.REPORT_TIMEZONE,
+  corsOrigins: env.CORS_ORIGINS.split(",").map((o) => o.trim()).filter((o) => o !== ""),
 };

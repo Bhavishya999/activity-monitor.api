@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "migrations:gen": "drizzle-kit generate",
-    "migrations:run": "tsx src/database/run-migrations.ts"
+    "migrations:run": "tsx src/database/run-migrations.ts",
+    "seed:sample": "tsx src/seeders/seed-sample.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",
