@@ -68,6 +68,16 @@ npm run dev:worker              # background worker (second terminal)
 
 Secrets belong in environment variables or your host's secret store only.
 
+### Sample data for UI development
+
+```bash
+createdb gam_sample
+DATABASE_URL=postgres://gam:gam@localhost:5432/gam_sample npm run migrations:run
+DATABASE_URL=postgres://gam:gam@localhost:5432/gam_sample npm run seed:sample
+```
+
+The seeder only runs against a database whose name contains `sample` and never in production. It flags the database so the frontend shows a permanent SAMPLE DATA banner.
+
 ### GitHub App
 
 Create a GitHub App with **Metadata: read** and **Contents: read**, subscribe to **Push**, **Repository**, **Installation** and **Installation repositories** events, set the webhook URL to `https://<api-host>/api/v1/webhooks/github`, then install it on each organization or account you want monitored. Details: [docs/milestone-1.md](docs/milestone-1.md).

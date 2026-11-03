@@ -3,6 +3,7 @@
  * real GitHub access. It flags the database as sample data (the UI shows a permanent banner) and refuses to run
  * against production or against any database whose name does not contain "sample".
  */
+import { createHash } from "node:crypto";
 import { createDb, schema } from "../database/client.js";
 import { SETTING_SAMPLE_DATA } from "../helpers/meta-helper.js";
 
@@ -94,7 +95,7 @@ async function main(): Promise<void> {
       const merge = !isBot && rand() < 0.08;
       sha += 1;
       rows.push({
-        repositoryId: repoId, sha: sha.toString(16).padStart(40, "0"), message: `${pick(MESSAGES)}\n\nSample data`,
+        repositoryId: repoId, sha: createHash("sha1").update(`sample-${sha}`).digest("hex"), message: `${pick(MESSAGES)}\n\nSample data`,
         authorAccountId: rand() < 0.03 ? null : who, committerAccountId: who, authorName: "Sample", committerName: "Sample",
         authoredAt: at, committedAt: at, htmlUrl: null, parentCount: merge ? 2 : 1, isMerge: merge,
         additions: Math.floor(rand() * 220), deletions: Math.floor(rand() * 90), changedFiles: 1 + Math.floor(rand() * 9), source: "import",

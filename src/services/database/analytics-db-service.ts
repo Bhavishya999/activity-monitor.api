@@ -80,7 +80,7 @@ function dimensionFor(by: BreakdownDimension, f: CommitFilters): Dimension {
     case "organization":
       return {
         joins: sql`join github_installation gi on gi.id = r.installation_id join github_account ga on ga.id = gi.account_id`,
-        key: sql`ga.id`, label: sql`ga.login`,
+        key: sql`gi.id`, label: sql`ga.login`, // installation id: it is what the installationId filter expects
       };
     case "repository": return { joins: sql``, key: sql`r.id`, label: sql`r.full_name` };
     case "developer": return { joins: sql``, key: sql`d.id`, label: sql`d.login` };

@@ -188,3 +188,18 @@ describe("input validation", () => {
     expect((await get<{ error: string }>(path)).status).toBe(400);
   });
 });
+
+describe("response types", () => {
+  it("returns ids and counts as numbers everywhere, never strings", async () => {
+    const overview = (await get<{ leaderboard: { developer: { id: unknown } | null; commits: unknown }[]; repositoryDistribution: { id: unknown }[]; recentCommits: { id: unknown; repository: { id: unknown }; developer: { id: unknown } | null }[] }>(`/analytics/overview?${RANGE}`)).body;
+    expect(overview.leaderboard.every((l) => typeof l.commits === "number" && (l.developer === null || typeof l.developer.id === "number"))).toBe(true);
+    expect(overview.repositoryDistribution.every((r) => typeof r.id === "number")).toBe(true);
+    expect(overview.recentCommits.every((c) => typeof c.id === "number" && typeof c.repository.id === "number" && (c.developer === null || typeof c.developer.id === "number"))).toBe(true);
+    const devs = (await get<{ items: { id: unknown }[] }>(`/developers?${RANGE}`)).body.items;
+    expect(devs.every((d) => typeof d.id === "number")).toBe(true);
+    const repos = (await get<{ items: { id: unknown }[] }>(`/repositories?${RANGE}`)).body.items;
+    expect(repos.every((r) => typeof r.id === "number")).toBe(true);
+    const groups = (await get<{ groups: { id: unknown }[] }>(`/analytics/breakdown?${RANGE}&by=organization`)).body.groups;
+    expect(groups.every((g) => typeof g.id === "number")).toBe(true);
+  });
+});
