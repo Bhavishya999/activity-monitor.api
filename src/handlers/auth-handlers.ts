@@ -1,6 +1,6 @@
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { authConfig } from "../config/auth-config.js";
-import { appConfig } from "../config/app-config.js";
+import { env } from "../env.js";
 import {
   forgotPassword,
   login,
@@ -18,10 +18,11 @@ export const handleLogin: AppHandler = async (c) => {
 
   const { rawSessionToken, csrfToken, user } = await login(deps.db, email, password);
 
+  const isProd = env.NODE_ENV === "production";
   setCookie(c, authConfig.cookieName, rawSessionToken, {
     httpOnly: true,
-    secure: appConfig.isProduction,
-    sameSite: "Strict",
+    secure: isProd,
+    sameSite: isProd ? "None" : "Strict",
     path: "/",
     maxAge: authConfig.sessionTtlMs / 1000,
   });

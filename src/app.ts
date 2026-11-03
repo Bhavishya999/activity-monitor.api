@@ -1,5 +1,7 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { env } from "./env.js";
 import { APP_MESSAGES } from "./constants/app-messages.js";
 import { BaseException } from "./exceptions/base-exception.js";
 import { adminRouter } from "./routes/admin-router.js";
@@ -19,6 +21,13 @@ export function createApp(deps: AppDeps): Hono<AppBindings> {
   const app = new Hono<AppBindings>();
 
   app.use("*", secureHeaders());
+  app.use("/api/*", cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+    allowHeaders: ["Content-Type", "x-csrf-token", "x-request-id"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    exposeHeaders: ["x-csrf-token", "x-request-id"],
+  }));
   app.use("*", async (c, next) => {
     const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
     c.set("deps", deps);
