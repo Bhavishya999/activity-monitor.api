@@ -141,19 +141,19 @@ Layering is strict: `Router → Handler → Helper → DB service`. See [docs/CO
 
 ## Deployment (Railway)
 
-Three services from this repo plus Postgres:
+Step-by-step guide, including Supabase and the GitHub App webhook URL: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
 
-| Service | Start command |
-|---|---|
-| API | `npm start` |
-| Worker | `npm run start:worker` |
-| PostgreSQL | Railway plugin |
+| Service | Config file | Command |
+|---|---|---|
+| API | `railway.api.json` | migrations run first, then `npm start` |
+| Worker | `railway.worker.json` | `npm run start:worker` |
 
-Run `npm run migrations:run` as a release step before each deploy. Health endpoints: `/healthz` (liveness) and `/readyz` (database check).
+Health endpoints: `/healthz` (liveness) and `/readyz` (database check). The API URL is the public domain Railway generates for the API service.
 
 ## Docs
 
 - [Conventions](docs/CONVENTIONS.md)
 - [Plan and decisions](docs/PLAN.md)
 - [Edge cases checklist](docs/EDGE_CASES.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
 - [Milestone 1 notes](docs/milestone-1.md)

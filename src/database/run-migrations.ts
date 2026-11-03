@@ -1,11 +1,11 @@
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { createDb } from "./client.js";
 
 export async function runMigrations(url: string): Promise<void> {
   const { db, pool } = createDb(url, 1);
   try {
-    await migrate(db, { migrationsFolder: fileURLToPath(new URL("../../migrations", import.meta.url)) });
+    await migrate(db, { migrationsFolder: process.env["MIGRATIONS_DIR"] ?? resolve(process.cwd(), "migrations") });
   } finally {
     await pool.end();
   }
