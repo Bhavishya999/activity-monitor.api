@@ -8,6 +8,7 @@ import { discoverRepositories } from "./services/discovery.js";
 import { finishSyncRun, importRepository, logSyncError } from "./services/importer.js";
 import { classifyImportError } from "../helpers/import-error-helper.js";
 import { processWebhookDelivery } from "./services/webhooks.js";
+import { sendDailyReport } from "../services/reports/daily-report.js";
 
 const log = (level: string, msg: string, extra: object = {}) => console.log(JSON.stringify({ level, msg, ...extra }));
 
@@ -28,6 +29,12 @@ export async function enqueueInstallationImport(boss: PgBoss, db: Db, installati
 export async function registerJobs(boss: PgBoss, db: Db, gh: GitHubApi): Promise<void> {
   for (const q of Object.values(JOBS)) await boss.createQueue(q);
 
+  // Daily reports — times in UTC:
+  // 4:30 PM IST = 11:00 UTC (end-of-day snapshot)
+  // 7:00 AM IST = 01:30 UTC (previous-day full summary)
+  await boss.schedule(JOBS.DAILY_REPORT_EOD, "0 11 * * *", {});
+  await boss.schedule(JOBS.DAILY_REPORT_MORNING, "30 1 * * *", {});
+
   await boss.work(JOBS.WEBHOOK, { batchSize: 5 }, async (jobs) => {
     for (const job of jobs) {
       const { deliveryRowId } = vWebhookJobSchema.parse(job.data);
@@ -41,6 +48,18 @@ export async function registerJobs(boss: PgBoss, db: Db, gh: GitHubApi): Promise
       const ids = await discoverRepositories(db, gh, installationId);
       log("info", "discovered repositories", { installationId, count: ids.length });
     }
+  });
+
+  await boss.work(JOBS.DAILY_REPORT_EOD, async () => {
+    log("info", "sending eod daily report");
+    await sendDailyReport(db, "eod");
+    log("info", "eod daily report sent");
+  });
+
+  await boss.work(JOBS.DAILY_REPORT_MORNING, async () => {
+    log("info", "sending morning daily report");
+    await sendDailyReport(db, "morning");
+    log("info", "morning daily report sent");
   });
 
   await boss.work(JOBS.IMPORT, { batchSize: 1 }, async ([job]) => {

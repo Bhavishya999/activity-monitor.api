@@ -11,4 +11,6 @@ export const env = {
   PORT: Number(process.env["PORT"] ?? 3000),
   LOG_LEVEL: process.env["LOG_LEVEL"] ?? "info",
   CORS_ORIGIN: process.env["CORS_ORIGIN"] ?? "http://localhost:5173",
+  REPORT_TIMEZONE: process.env["REPORT_TIMEZONE"] ?? "Asia/Kolkata",
+  SLACK_WEBHOOK_URL: process.env["SLACK_WEBHOOK_URL"] ?? "",
 } as const;
