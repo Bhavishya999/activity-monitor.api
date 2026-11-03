@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { APP_MESSAGES } from "./constants/app-messages.js";
 import { BaseException } from "./exceptions/base-exception.js";
+import { adminRouter } from "./routes/admin-router.js";
+import { analyticsRouter } from "./routes/analytics-router.js";
+import { authRouter } from "./routes/auth-router.js";
+import { githubAccountsRouter } from "./routes/github-accounts-router.js";
 import { healthRouter } from "./routes/health-router.js";
+import { syncRouter } from "./routes/sync-router.js";
 import { webhookRouter } from "./routes/webhook-router.js";
 import type { AppBindings, AppDeps } from "./types/app.types.js";
 import { logger } from "./utils/pino-logger.js";
@@ -25,7 +30,12 @@ export function createApp(deps: AppDeps): Hono<AppBindings> {
   });
 
   app.route("/", healthRouter);
+  app.route("/api/v1/auth", authRouter);
   app.route("/api/v1/webhooks", webhookRouter);
+  app.route("/api/v1", analyticsRouter);
+  app.route("/api/v1/github-accounts", githubAccountsRouter);
+  app.route("/api/v1/sync", syncRouter);
+  app.route("/api/v1/admin", adminRouter);
 
   app.onError((err, c) => {
     const requestId = c.get("requestId");

@@ -15,7 +15,7 @@ export const syncKind = pgEnum("sync_kind", ["discovery", "import", "reconcile"]
 export const syncStatus = pgEnum("sync_status", ["pending", "running", "succeeded", "failed", "partial", "cancelled"]);
 export const webhookStatus = pgEnum("webhook_status", ["received", "processing", "processed", "failed", "ignored"]);
 export const commitSource = pgEnum("commit_source", ["import", "webhook", "reconcile"]);
-export const roleName = pgEnum("role_name", ["ADMIN", "MANAGER", "DEVELOPER"]);
+export const roleName = pgEnum("role_name", ["ADMIN", "MANAGER", "DEVELOPER", "SUPER_ADMIN"]);
 export const reportKind = pgEnum("report_kind", ["EVENING", "MORNING"]);
 export const deliveryStatus = pgEnum("delivery_status", ["pending", "sent", "failed", "skipped"]);
 
@@ -195,8 +195,9 @@ export const appUser = pgTable("app_user", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   email: text("email").notNull(),
   name: text("name"),
-  provider: text("provider").notNull(), // google | entra
-  providerSubject: text("provider_subject").notNull(),
+  provider: text("provider").notNull().default("local"), // local | zoho (future)
+  providerSubject: text("provider_subject"),
+  passwordHash: text("password_hash"),
   role: roleName("role").notNull().default("DEVELOPER"),
   employeeId: bigint("employee_id", { mode: "number" }).references(() => employee.id, { onDelete: "set null" }),
   active: boolean("active").notNull().default(true),
@@ -231,6 +232,16 @@ export const auditLog = pgTable("audit_log", {
   ip: text("ip"),
   createdAt: createdAt(),
 }, (t) => [index("audit_created_idx").on(t.createdAt), index("audit_actor_idx").on(t.actorUserId)]);
+
+export const passwordResetOtp = pgTable("password_reset_otp", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  userId: bigint("user_id", { mode: "number" }).notNull().references(() => appUser.id, { onDelete: "cascade" }),
+  otpHash: text("otp_hash").notNull(),
+  resetTokenHash: text("reset_token_hash"),
+  expiresAt: ts("expires_at").notNull(),
+  usedAt: ts("used_at"),
+  createdAt: createdAt(),
+}, (t) => [index("otp_user_expires_idx").on(t.userId, t.expiresAt)]);
 
 // ---------- reporting ----------
 export const dailyReport = pgTable("daily_report", {

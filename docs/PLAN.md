@@ -85,22 +85,161 @@ Two separate repos, created by the user on GitHub; code is pushed only after the
 - **Frontend repo**: Vite + React 19 + TypeScript + TanStack Router (file-based) + TanStack Query + shadcn/ui + Tailwind 4 + Recharts, laid out exactly like the reference (`routes/`, `components/<domain>`, `hooks/`, `https/services/`, `lib/`). Because that layout is a single-page app, **TanStack Start (SSR) is replaced by the Vite SPA** for this internal login-only dashboard; the API contract is mirrored in `lib/interfaces/`.
 - Conventions: see `docs/CONVENTIONS.md` (saved from the team guide).
 
-## Decisions: company, login, roles (confirmed by user)
-- **Single company for first launch** (domain `orotron.com`, supplied via `ALLOWED_EMAIL_DOMAIN`, never hardcoded). GitHub side stays multi-installation (several GitHub orgs/accounts can be connected).
-- **Login:** company Zoho accounts via OAuth2/OpenID Connect (Zoho Accounts / Zoho Directory SSO if the company has it; otherwise another company IdP). Needs: Zoho API Console client id/secret, redirect URI, and the Zoho data-center domain (`accounts.zoho.com|.in|.eu`…). Provider is behind an interface so it can be swapped.
-- **Access control:** a company email is NOT enough. Only employees invited/approved by an Admin can sign in. No public sign-up. First Super Admin is seeded from `SUPER_ADMIN_EMAIL`.
-- **Roles:** `DEVELOPER` (own activity + team analytics), `ADMIN` (employees, GitHub connections, repositories, reports), `SUPER_ADMIN` (everything incl. settings and role management). Replaces the earlier ADMIN/MANAGER/DEVELOPER enum; migrate `role_name` when the auth milestone starts.
+## Decisions: company, login, roles (updated 2026-11-03)
+
+- **Single company for first launch** (domain `orotron.com`, via `ALLOWED_EMAIL_DOMAIN` env var — never hardcoded).
+- **Auth (v1 — simplified):** Email + bcrypt password. No OAuth/Zoho in v1. Provider interface stays so Zoho OIDC can be swapped in later without touching routes or handlers. First SUPER_ADMIN seeded from `SUPER_ADMIN_EMAIL` + `SUPER_ADMIN_PASSWORD` env vars.
+- **Roles (v1):** `SUPER_ADMIN` only. Single role sees everything. `ADMIN` and `DEVELOPER` roles exist in the enum for future use but are not granted access to any route in v1.
+- **Forgot password:** OTP flow (see Auth Flow section below). OTP is a 6-digit code, valid 10 minutes, single-use, bcrypt-hashed at rest.
 - GitHub accounts are linked to employees separately (admin-managed); commits are always attributed by GitHub identity.
-- Open item: confirm whether the company has Zoho Directory/Zoho One (affects how login is configured).
+- Zoho OIDC added in a future milestone once company SSO is confirmed.
+
+---
+
+## Auth Flow (v1 — implemented in Milestone 2)
+
+### Login
+```
+POST /api/v1/auth/login
+Body: { email, password }
+
+1. Look up app_user by email (provider = "local", active = true)
+2. bcrypt.compare(password, password_hash)
+3. On match: generate opaque session token (crypto.randomBytes(32))
+4. SHA-256 hash of token stored as session.id; raw token in HttpOnly Secure SameSite=Strict cookie
+5. Generate CSRF token (crypto.randomBytes(32)), stored in session.csrf_token
+6. Return: { user: { id, email, name, role } }  +  set-cookie (session) + X-CSRF-Token header
+```
+
+### Me (session check)
+```
+GET /api/v1/auth/me
+Cookie: session=<token>
+
+1. Hash incoming token → look up session (not expired)
+2. Return { id, email, name, role }
+→ 401 if no session or expired
+```
+
+### Logout
+```
+POST /api/v1/auth/logout
+Cookie: session=<token>   CSRF: X-CSRF-Token header
+
+1. Verify CSRF
+2. Delete session row
+3. Clear cookie
+→ 204
+```
+
+### Forgot Password — Step 1: Request OTP
+```
+POST /api/v1/auth/forgot-password
+Body: { email }
+
+1. Find app_user by email (always return 200 to avoid email enumeration)
+2. If found: generate 6-digit OTP (crypto.randomInt)
+3. bcrypt hash of OTP stored in password_reset_otp table with 10-min expiry
+4. Send OTP email via SMTP (subject: "Your reset code — Git Activity Monitor")
+5. Invalidate any previous unused OTPs for that user
+→ 200 { message: "If that email exists, a code was sent." }
+```
+
+### Forgot Password — Step 2: Verify OTP
+```
+POST /api/v1/auth/verify-otp
+Body: { email, otp }
+
+1. Look up latest active password_reset_otp for that user (not expired, not used)
+2. bcrypt.compare(otp, otp_hash)
+3. On match: mark otp used_at = now(); issue a short-lived reset token (crypto.randomBytes(32), 15 min TTL) returned in response body
+→ 200 { resetToken: "<token>" }  |  400 invalid/expired
+```
+
+### Forgot Password — Step 3: Set New Password
+```
+POST /api/v1/auth/reset-password
+Body: { resetToken, newPassword }
+
+1. Look up password_reset_otp by reset_token_hash (not expired)
+2. Validate newPassword (min 8 chars, not same as current)
+3. bcrypt.hash(newPassword, 12) → update app_user.password_hash
+4. Invalidate the reset token (delete row)
+5. Invalidate all active sessions for that user (security: force re-login)
+→ 204
+```
+
+---
+
+## Schema changes for Milestone 2
+
+### 1. `role_name` enum — add `SUPER_ADMIN`
+```sql
+ALTER TYPE role_name ADD VALUE 'SUPER_ADMIN';
+```
+
+### 2. `app_user` table — local auth columns
+```sql
+ALTER TABLE app_user
+  ADD COLUMN password_hash text,              -- bcrypt hash; null for future OAuth users
+  ALTER COLUMN provider SET DEFAULT 'local',  -- 'local' | 'zoho' (future)
+  ALTER COLUMN provider_subject DROP NOT NULL; -- not needed for local auth
+```
+
+### 3. New table: `password_reset_otp`
+```sql
+CREATE TABLE password_reset_otp (
+  id           bigserial PRIMARY KEY,
+  user_id      bigint NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  otp_hash     text NOT NULL,           -- bcrypt of 6-digit OTP
+  reset_token_hash text,               -- SHA-256 of reset token; set after OTP verified
+  expires_at   timestamptz NOT NULL,   -- OTP: now + 10 min; reset_token: now + 15 min
+  used_at      timestamptz,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX otp_user_idx ON password_reset_otp(user_id, expires_at);
+```
+
+---
+
+## New env vars (Milestone 2)
+
+| Var | Purpose |
+|---|---|
+| `SUPER_ADMIN_EMAIL` | Seeded on first boot if no users exist |
+| `SUPER_ADMIN_PASSWORD` | bcrypt-hashed and stored; remove from env after seed |
+| `SESSION_SECRET` | Pepper for session tokens (32+ random bytes) |
+| `SMTP_HOST` | Email server host |
+| `SMTP_PORT` | Email server port (default 587) |
+| `SMTP_USER` | SMTP login |
+| `SMTP_PASS` | SMTP password |
+| `SMTP_FROM` | From address e.g. `noreply@orotron.com` |
+
+---
+
+## Middleware (Milestone 2)
+
+```
+requireSession   → reads cookie → verifies hash → loads user → 401 if missing/expired
+requireRole(...) → checks user.role is in allowed list → 403 if not
+requireCsrf      → verifies X-CSRF-Token matches session.csrf_token → 403 if not
+```
+
+All protected routes: `requireSession` + `requireRole("SUPER_ADMIN")`.
+Mutations additionally: `requireCsrf`.
+
+---
 
 ## Status
-- **Milestone 1: done** (23 tests passing): schema/migrations, GitHub App auth, multi-installation discovery, resumable branch-aware import, signed webhooks + async processing.
-- **In progress:** strict-TS hardening, API-call efficiency pass, analytics API, dashboard (pulled forward from Milestone 3, with minimal auth guard).
+- **Milestone 1: done** — schema + migrations, GitHub App auth, multi-installation discovery, resumable branch-aware import, signed webhooks + async processing, strict-TS, 43 tests.
+- **Milestone 2: next** — email/password auth, OTP forgot-password, SUPER_ADMIN seed, session middleware, protect all routes.
 
 ## Milestones
-1. **(in progress)** Scaffold, Drizzle schema + migrations, GitHub App auth, multi-installation, repo discovery, commit import, webhooks, tests (mocked GitHub + `gam_test`).
-2. Auth, employees, RBAC, protected APIs.
-3. Dashboard UI in TanStack Start, analytics, commit explorer, filters.
-4. Background sync UI, reconciliation, error handling.
-5. Slack, Google Sheets, automated reports.
-6. Testing, security review, Railway deployment, docs.
+1. ✅ Scaffold, schema + migrations, GitHub App auth, multi-installation, repo discovery, commit import, webhooks, tests.
+2. **Auth (v1):** email/password login, OTP forgot-password flow, SUPER_ADMIN seed, session + CSRF + role middleware, protect all routes.
+3. Analytics API (overview, developers, repositories, commits endpoints) + basic dashboard UI.
+4. GitHub accounts / repos / sync management UI.
+5. Background sync UI, reconciliation, error handling.
+6. Slack, Google Sheets, automated reports.
+7. Zoho OIDC (swap in behind provider interface), ADMIN + DEVELOPER roles.
+8. Testing, security review, Railway deployment, docs.
